@@ -1,4 +1,7 @@
 import sqlite3
+import requests
+from bs4 import BeautifulSoup
+import re
 
 def connect():
     """
@@ -28,9 +31,12 @@ def search(title="", author="", year="", isbn=""):
     """
     conn = sqlite3.connect("books.db")
     cursor = conn.cursor()
+
     cursor.execute("SELECT * FROM book WHERE title=? OR author=? OR year=? OR isbn=?", (title, author, year, isbn))
     row = cursor.fetchall()
     conn.close()
+    print(title)
+    print(author)
     if row == []:
         return 0
     return row
@@ -64,9 +70,44 @@ def update(id, title, author, year, isbn):
     """
     con = sqlite3.connect("books.db")
     cursor = con.cursor()
+
     cursor.execute("UPDATE book SET title=?, author=?, year=?, isbn=? WHERE id=?", (title, author, year, isbn, id))
     con.commit()
     con.close()
 
-connect()
+def add_to_db(num):
+    """
+    takes in a num, and will webscrape books from *num* pages of a library catalog
+    """
+    titles = []
+    authors = []
+    for x in range(0,num):
+        r = requests.get(f"https://tacoma.bibliocommons.com/v2/search?custom_edit=false&query=audience%3A%22adult%22%20pubyear%3A%5B2021%20TO%202022%5D&searchType=bl&suppress=true&f_FORMAT=BK&page={x}")
+        c = r.content
+        soup = BeautifulSoup(c, "html.parser")
+        
+        all_title = soup.findAll("span", {"class":"title-content"})
+        all_author = soup.findAll("a", {"class":"author-link"})
+
+        for book,author in zip(all_title,all_author):
+            titles.append(book.text)
+            authors.append(author.text)
+            
+        
+        connect()
+        for y in range(1,len(titles)):
+            insert(titles[y], authors[y], "-", y)
+
+def next_isbn():
+    isbns = []
+    con = sqlite3.connect("books.db")
+    cursor = con.cursor()
+    cursor.execute("SELECT isbn FROM book")
+    rock = cursor.fetchall()
+    for isbn in rock:
+        isbns.append(isbn[0])
+    isbns.sort()
+    return isbns[-1] + 1
+
+
 
