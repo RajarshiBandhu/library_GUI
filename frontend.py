@@ -1,9 +1,12 @@
 from tkinter import *
-
 from click import command
 from matplotlib.pyplot import title
 from backend import *
 
+#If you want some books to put in, use add_to_db (uncomment it) to add books to the database. 
+#The paramater is the number of books, each increase of 1 will aproximately add 5 books
+
+#add_to_db(5)
 def delete_entry():
     """
     Empties entry values
@@ -27,20 +30,23 @@ def search_command():
     """
     rows = search(title = e1.get(), author = e2.get(), year = e3.get(), isbn = e4.get())
     list1.delete(0, END)
+    print(rows)
+    if rows == 0:
+        return 0
     for row in rows:
         list1.insert(END, f"{row[0]} {row[1]} by {row[2]}, year:{row[3]}, isbn:{row[4]}")
     delete_entry()
-    print(row)
+
 
 def insert_command():
     """
     Inserts row into database, using the entry boxes
     """
-    if not e1.get() or not e2.get() or not e3.get() or not e4.get():
+    if not e1.get() or not e2.get() or not e3.get():
         list1.delete(0,END)
         list1.insert(0, "Fill in title, author, year, isbn")
     else:
-        insert(e1.get(), e2.get(), e3.get(), e4.get())
+        insert(e1.get(), e2.get(), e3.get(), next_isbn())
         delete_entry()
         view_command()
 
@@ -71,8 +77,7 @@ def update_command():
             list1.delete(0,END)
             list1.insert(0, "Fill in title, author, year, isbn")
         else:
-            print(e1.get())
-            update(row[0][0], e1.get(), e2.get(), e3.get(), e4.get())
+            update(row[0][0], e1.get(), e2.get(), e3.get(), next_isbn())
             view_command()
 
 
